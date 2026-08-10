@@ -1,0 +1,10 @@
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\domain\entities\AuditInfo.java
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\domain\entities\BaseEntity.java
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\domain\entities\inputs\ExecutionContext.java
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\domain\entities\inputs\Message.java
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\domain\entities\interfaces\IAggregateRoot.java
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\tenant\inputs\TenantInfo.java
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\tenant\TenantContext.java
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\tenant\TenantContextFilter.java
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\usecase\BaseUseCase.java
+D:\temp-project\Java\challenge\cross-cutting\src\main\java\com\gustavo\dev\usecase\interfaces\IUseCase.java
