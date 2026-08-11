@@ -33,6 +33,18 @@ Controller DTOs must be placed below `application.controllers.dtos`:
 
 DTOs must be operation-specific. They are transport models and must not be used as domain inputs or entities.
 
+An inbound input model must encapsulate its mechanical mapping to the corresponding domain input through a `toDomain()` method when such a domain input exists. The controller calls this method instead of containing field-by-field mapping code. This keeps the controller focused on HTTP concerns and makes the transport-to-domain boundary discoverable beside the transport model.
+
+`toDomain()` may instantiate the domain input and its nested input records, copy fields, and create request execution metadata such as `ExecutionContext`. It must not validate domain invariants, invoke entity or value-object factories, query repositories, normalize business values, or make business decisions. Domain interpretation and validation remain behind domain entity operations.
+
+```java
+public record ImportOrderInputModel(/* transport fields */) {
+    public ImportOrderInput toDomain() {
+        return new ImportOrderInput(/* mechanical field mapping */);
+    }
+}
+```
+
 ## Why it works better
 
 Package and type names state both direction and intent. Independent DTOs allow request and response contracts to evolve without coupling the domain or unrelated operations.
@@ -44,6 +56,7 @@ Package and type names state both direction and intent. Independent DTOs allow r
 - DTO direction and ownership are explicit.
 - API evolution has a smaller impact radius.
 - Sensitive or irrelevant fields are less likely to cross the boundary.
+- Controllers do not accumulate repetitive DTO-to-domain construction code.
 
 ## Trade-offs
 
@@ -57,4 +70,3 @@ The extra types can look repetitive, but shared DTOs create semantic coupling ev
 # Theory Foundation
 
 The Interface Segregation Principle favors contracts tailored to each consumer. Evans's layered architecture and Martin's Dependency Rule keep transport representations outside the domain model.
-

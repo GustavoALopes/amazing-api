@@ -9,6 +9,7 @@ This directory contains the approved Architecture Decision Records for domain se
 - [DS-003 - Use cases own transaction boundaries](DS-003-use-cases-own-transaction-boundaries.md)
 - [DS-004 - Domain services depend on interfaces](DS-004-domain-services-depend-on-interfaces.md)
 - [DS-005 - Domain services are concrete classes in domain.services](DS-005-concrete-domain-services-package.md)
+- [DS-006 - Domain services must not depend on domain services](DS-006-domain-services-must-not-depend-on-domain-services.md)
 
 ## Conventions
 

@@ -30,13 +30,17 @@ A domain service must not validate an entity's rules or reproduce its validation
 
 The domain service only orchestrates the operation: it uses external dependency abstractions to obtain required data, invokes entity operations with domain inputs, and passes the resulting entity to the appropriate dependency. It may react to an entity operation's success or failure, but it must not pre-implement the entity's rule to predict that result.
 
+Orchestration must not become construction-by-hand. A domain service must pass the operation-specific domain input to the entity factory without decomposing it into primitive arguments. It must not split, normalize, parse, or otherwise interpret input fields; construct an entity-owned value object from raw input; or combine those results to reproduce the entity factory. These transformations are part of creating valid entity state and therefore belong behind the entity operation. After a successful factory call, the service may use the resulting entity or its value objects to perform existence checks and persistence.
+
 ```java
-public Order create(CreateNewOrderInputModel input) {
+public Order create(CreateNewOrderInput input) {
     var order = Order.createNew(input);
     inventoryGateway.reserveFor(order);
     return orderRepository.save(order);
 }
 ```
+
+For example, a customer import service must call `Customer.createNew(context, customerInput)`. It must not split `customerInput.name()`, invoke `BirthDate.of(...)` or `Document.of(...)`, and then pass those intermediate values to `Customer.createNew(...)`. The `Customer` factory owns that interpretation and validation.
 
 ## Why it works better
 

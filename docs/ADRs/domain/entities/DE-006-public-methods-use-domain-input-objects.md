@@ -48,7 +48,13 @@ domains/order/entities/inputs/CreateNewOrderInput.java
 
 Input object names must describe the operation they support, such as `CreateNewOrderInput` or `ChangeDeliveryAddressInput`. They must expose only the values required by that domain operation and should be immutable. Validation of entity invariants remains the responsibility of the entity; the input object groups and names the requested data but does not replace entity validation.
 
+The domain input must cross the domain-service boundary intact. A service invoking the operation must pass the relevant operation-specific input object directly to the entity method instead of unpacking it and rebuilding a positional argument list. An entity factory must therefore accept the domain input itself, not primitives or value objects assembled by its caller.
+
+An immutable domain input may expose deterministic derived accessors that give names to structural decomposition of its own raw values, such as `firstName()` and `lastName()` derived from an imported full name. The entity remains responsible for using those values, constructing its value objects, and deciding whether the complete state is valid. Derived accessors must not perform database access or make decisions requiring entity state or external facts.
+
 Parameterless methods and read-only methods that receive no operation data are unaffected. A public operation must not retain a convenience overload that accepts the same data as individual parameters, because that would preserve a second, less maintainable contract.
+
+For nested import data, callers must pass the smallest input relevant to the entity operation. For example, `CustomerService.importCustomer` receives the import's `CustomerInput`, and `Customer.createNew` receives that same `CustomerInput`; neither receives the entire enclosing order import merely for convenience.
 
 ## Why it works better
 

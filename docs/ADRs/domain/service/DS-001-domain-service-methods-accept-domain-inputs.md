@@ -28,11 +28,24 @@ The domain becomes coupled to the application or API, domain operations inherit 
 
 Every domain service method that receives operation data must receive an operation-specific domain input from the owning entity's `inputs` package, such as `domains.order.entities.inputs.CreateNewOrderInputModel`. A domain service must never accept an application or controller DTO.
 
+A method must receive the narrowest domain data it actually uses. It must not accept an enclosing or root input merely to retrieve a nested input, execution context, or other property from it. When a method needs `ExecutionContext` and `ImportOrderInput.ProductInput`, those are its parameters; passing the entire `ImportOrderInput` creates a false dependency on unrelated customer, address, and order data.
+
+This rule applies recursively to private helpers. A public service method that iterates imported products should pass `ExecutionContext` and each `ProductInput` to its item helper, not repeatedly pass the root import object. The same root object must not be used as a general-purpose parameter bag across service methods.
+
 The use-case layer maps its DTO to the domain input before calling the service. Parameters that are collaborators rather than operation data are governed by DS-004.
 
 ```java
 public Order create(CreateNewOrderInputModel input) {
     // Coordinate repositories/APIs and invoke Order behavior.
+}
+```
+
+```java
+private void importProduct(
+        ExecutionContext executionContext,
+        ImportOrderInput.ProductInput productInput
+) {
+    var product = Product.createNew(executionContext, productInput);
 }
 ```
 
