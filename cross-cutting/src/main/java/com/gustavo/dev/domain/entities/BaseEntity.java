@@ -3,6 +3,7 @@ package com.gustavo.dev.domain.entities;
 import com.gustavo.dev.domain.entities.inputs.ExecutionContext;
 import com.gustavo.dev.uuid.UuidProvider;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 
@@ -16,6 +17,7 @@ public abstract class BaseEntity<T> {
     @Id
     protected T id;
 
+    @Embedded
     protected AuditInfo auditInfo;
 
     @Column(name = "correlation_id")

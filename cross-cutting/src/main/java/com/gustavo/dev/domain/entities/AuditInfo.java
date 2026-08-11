@@ -1,24 +1,28 @@
 package com.gustavo.dev.domain.entities;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Embeddable;
 
 import java.time.Instant;
 
-@MappedSuperclass
+@Embeddable
 public class AuditInfo {
 
     @Column(name = "created_at")
-    private final Instant createdAt;
+    private Instant createdAt;
 
     @Column(name = "created_by")
-    private final String createdBy;
+    private String createdBy;
 
     @Column(name = "updated_at")
     private Instant updatedAt;
 
     @Column(name = "updated_by")
     private String updatedBy;
+
+    /** Infrastructure-only constructor for Hibernate. */
+    protected AuditInfo() {
+    }
 
     public AuditInfo(final Instant createdAt, final String createdBy) {
         this.createdAt = createdAt;
