@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Domain Entity"
+  short_description: "Create ADR-compliant Java domain entities"
+  default_prompt: "Use $create-domain-entity to create a new domain entity."
