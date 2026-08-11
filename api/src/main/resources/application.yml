@@ -5,3 +5,17 @@ spring:
     url: jdbc:postgresql://localhost:5432/demo
     username: guest
     password: secret
+  flyway:
+    enabled: true
+  jpa:
+    properties:
+      hibernate.jdbc.time_zone: UTC
+
+management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

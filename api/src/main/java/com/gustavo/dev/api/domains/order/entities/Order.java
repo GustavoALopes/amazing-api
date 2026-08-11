@@ -2,6 +2,8 @@ package com.gustavo.dev.api.domains.order.entities;
 
 import com.gustavo.dev.api.domains.customer.entities.Customer;
 import com.gustavo.dev.api.domains.order.entities.valueobjects.Address;
+import com.gustavo.dev.api.domains.order.entities.inputs.ImportOrderInput;
+import com.gustavo.dev.api.domains.products.entities.Product;
 import com.gustavo.dev.domain.entities.BaseEntity;
 import com.gustavo.dev.domain.entities.inputs.ExecutionContext;
 import com.gustavo.dev.domain.entities.interfaces.IAggregateRoot;
@@ -20,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 
 @Entity
@@ -57,6 +60,9 @@ public final class Order extends BaseEntity<UUID> implements IAggregateRoot {
     @Embedded
     private Address address;
 
+    @Column(name = "code", nullable = false, unique = true)
+    private UUID code;
+
     /** Infrastructure-only constructor for Hibernate. */
     protected Order() {
         super();
@@ -67,56 +73,86 @@ public final class Order extends BaseEntity<UUID> implements IAggregateRoot {
             final Customer customer,
             final BigDecimal totalValue,
             final OffsetDateTime purchaseDate,
-            final Address address
+            final Address address,
+            final UUID code
     ) {
         this.products = Set.copyOf(products);
         this.customer = customer;
         this.totalValue = totalValue;
         this.purchaseDate = purchaseDate;
         this.address = address;
+        this.code = code;
     }
 
     public static Order createNew(
             final ExecutionContext executionContext,
-            final Set<ProductItem> products,
+            final ImportOrderInput input,
             final Customer customer,
-            final BigDecimal totalValue,
-            final OffsetDateTime purchaseDate,
-            final Address address
+            final Set<Product> products
     ) throws Exception {
-        return createNew(executionContext, products, customer, totalValue, purchaseDate, address,
+        return createNew(executionContext, input, customer, products,
                 Clock.systemDefaultZone());
     }
 
     public static Order createNew(
             final ExecutionContext executionContext,
-            final Set<ProductItem> products,
+            final ImportOrderInput input,
             final Customer customer,
-            final BigDecimal totalValue,
-            final OffsetDateTime purchaseDate,
-            final Address address,
+            final Set<Product> resolvedProducts,
             final Clock clock
     ) throws Exception {
-        if (executionContext == null || !isValid(products, customer, totalValue, purchaseDate, address, clock)) {
+        if (input == null) return null;
+        final var products = createProductItems(executionContext, input, resolvedProducts);
+        final var totalValue = parseTotalValue(input.totalValue());
+        final var purchaseDate = input.purchasedAt();
+        final var address = Address.of(input.country(), input.state(), input.city(), input.neighborn(),
+                input.street(), input.number(), input.zipcode());
+        final var code = input.code();
+        if (executionContext == null || code == null || !isValid(products, customer, totalValue, purchaseDate, address, clock)) {
             return null;
         }
 
-        final var order = new Order(products, customer, totalValue, purchaseDate, address);
+        final var order = new Order(products, customer, totalValue, purchaseDate, address, code);
         order.baseCreateNew(executionContext, UuidProvider::getV7);
         return order;
     }
 
+    private static Set<ProductItem> createProductItems(
+            final ExecutionContext executionContext,
+            final ImportOrderInput input,
+            final Set<Product> resolvedProducts
+    ) throws Exception {
+        if (input.products() == null || resolvedProducts == null) return null;
+        final var items = new HashSet<ProductItem>();
+        for (final var productInput : input.products()) {
+            if (productInput == null) continue;
+            final var product = resolvedProducts.stream()
+                    .filter(candidate -> candidate.sku().value().equals(productInput.skuCode()))
+                    .findFirst()
+                    .orElse(null);
+            final var item = ProductItem.createNew(
+                    executionContext, product, productInput);
+            if (item != null) items.add(item);
+        }
+        return items;
+    }
+
+    private static BigDecimal parseTotalValue(final String value) {
+        try { return value == null ? null : new BigDecimal(value); }
+        catch (NumberFormatException exception) { return null; }
+    }
+
     public Order changeProducts(final Set<ProductItem> newProducts) {
-        return isValidProducts(newProducts) ? copyOf(newProducts, customer, totalValue, purchaseDate, address) : null;
+        return isValidProducts(newProducts) ? copyOf(newProducts, customer, totalValue, purchaseDate, address, code) : null;
     }
 
     public Order changeCustomer(final Customer newCustomer) {
-        return newCustomer != null ? copyOf(products, newCustomer, totalValue, purchaseDate, address) : null;
+        return newCustomer != null ? copyOf(products, newCustomer, totalValue, purchaseDate, address, code) : null;
     }
 
     public Order changeTotalValue(final BigDecimal newTotalValue) {
         return isValidTotalValue(newTotalValue)
-                ? copyOf(products, customer, newTotalValue, purchaseDate, address) : null;
+                ? copyOf(products, customer, newTotalValue, purchaseDate, address, code) : null;
     }
 
     public Order changePurchaseDate(final OffsetDateTime newPurchaseDate) {
@@ -125,11 +161,11 @@ public final class Order extends BaseEntity<UUID> implements IAggregateRoot {
 
     public Order changePurchaseDate(final OffsetDateTime newPurchaseDate, final Clock clock) {
         return isValidPurchaseDate(newPurchaseDate, clock)
-                ? copyOf(products, customer, totalValue, newPurchaseDate, address) : null;
+                ? copyOf(products, customer, totalValue, newPurchaseDate, address, code) : null;
     }
 
     public Order changeAddress(final Address newAddress) {
-        return newAddress != null ? copyOf(products, customer, totalValue, purchaseDate, newAddress) : null;
+        return newAddress != null ? copyOf(products, customer, totalValue, purchaseDate, newAddress, code) : null;
     }
 
     public UUID id() { return id; }
@@ -138,15 +174,17 @@ public final class Order extends BaseEntity<UUID> implements IAggregateRoot {
     public BigDecimal totalValue() { return totalValue; }
     public OffsetDateTime purchaseDate() { return purchaseDate; }
     public Address address() { return address; }
+    public UUID code() { return code; }
 
     private Order copyOf(
             final Set<ProductItem> newProducts,
             final Customer newCustomer,
             final BigDecimal newTotalValue,
             final OffsetDateTime newPurchaseDate,
-            final Address newAddress
+            final Address newAddress,
+            final UUID newCode
     ) {
-        final var copy = new Order(newProducts, newCustomer, newTotalValue, newPurchaseDate, newAddress);
+        final var copy = new Order(newProducts, newCustomer, newTotalValue, newPurchaseDate, newAddress, newCode);
         copy.id = id;
         copy.auditInfo = auditInfo;
         copy.correlationId = correlationId;

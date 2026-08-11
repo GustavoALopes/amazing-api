@@ -21,6 +21,9 @@ public final class Address {
     @Column(name = "address_state", nullable = false, length = TextRule.MAX_LENGTH)
     private String state;
 
+    @Column(name = "address_city", nullable = false, length = TextRule.MAX_LENGTH)
+    private String city;
+
     @Column(name = "address_neighborhood", nullable = false, length = TextRule.MAX_LENGTH)
     private String neighborhood;
 
@@ -40,6 +43,7 @@ public final class Address {
     private Address(
             final String country,
             final String state,
+            final String city,
             final String neighborhood,
             final String street,
             final String number,
@@ -47,6 +51,7 @@ public final class Address {
     ) {
         this.country = country;
         this.state = state;
+        this.city = city;
         this.neighborhood = neighborhood;
         this.street = street;
         this.number = number;
@@ -56,6 +61,7 @@ public final class Address {
     public static Address of(
             final String country,
             final String state,
+            final String city,
             final String neighborhood,
             final String street,
             final String number,
@@ -63,6 +69,7 @@ public final class Address {
     ) {
         if (!isRequiredTextValid(country)
                 || !isRequiredTextValid(state)
+                || !isRequiredTextValid(city)
                 || !isRequiredTextValid(neighborhood)
                 || !isRequiredTextValid(street)
                 || !isOptionalTextValid(number)
@@ -70,11 +77,12 @@ public final class Address {
             return null;
         }
 
-        return new Address(country, state, neighborhood, street, number, zipCode);
+        return new Address(country, state, city, neighborhood, street, number, zipCode);
     }
 
     public String country() { return country; }
     public String state() { return state; }
+    public String city() { return city; }
     public String neighborhood() { return neighborhood; }
     public String street() { return street; }
     public String number() { return number; }
@@ -94,6 +102,7 @@ public final class Address {
         if (!(other instanceof Address that)) return false;
         return Objects.equals(country, that.country)
                 && Objects.equals(state, that.state)
+                && Objects.equals(city, that.city)
                 && Objects.equals(neighborhood, that.neighborhood)
                 && Objects.equals(street, that.street)
                 && Objects.equals(number, that.number)
@@ -102,6 +111,6 @@ public final class Address {
 
     @Override
     public int hashCode() {
-        return Objects.hash(country, state, neighborhood, street, number, zipCode);
+        return Objects.hash(country, state, city, neighborhood, street, number, zipCode);
     }
 }

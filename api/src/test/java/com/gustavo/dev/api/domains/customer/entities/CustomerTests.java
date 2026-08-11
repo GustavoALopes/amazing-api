@@ -1,6 +1,7 @@
 package com.gustavo.dev.api.domains.customer.entities;
 
 import com.gustavo.dev.api.domains.customer.entities.valueobjects.BirthDate;
+import com.gustavo.dev.api.domains.order.entities.inputs.ImportOrderInput;
 import com.gustavo.dev.domain.entities.inputs.ExecutionContext;
 import com.gustavo.dev.domain.entities.interfaces.IAggregateRoot;
 import com.gustavo.dev.tenant.inputs.TenantInfo;
@@ -22,7 +23,7 @@ class CustomerTests {
 
     @Test
     void createsAValidCustomer() throws Exception {
-        final var customer = Customer.createNew(context(), "Ada", "Lovelace", BIRTH_DATE);
+        final var customer = Customer.createNew(context(), input("Ada Lovelace", BIRTH_DATE.value()));
 
         assertNotNull(customer);
         assertInstanceOf(IAggregateRoot.class, customer);
@@ -34,18 +35,19 @@ class CustomerTests {
 
     @Test
     void rejectsInvalidCreationInputsAndLengthBoundary() throws Exception {
-        assertNull(Customer.createNew(null, "Ada", "Lovelace", BIRTH_DATE));
-        assertNull(Customer.createNew(context(), null, "Lovelace", BIRTH_DATE));
-        assertNull(Customer.createNew(context(), "Ada", null, BIRTH_DATE));
-        assertNull(Customer.createNew(context(), "Ada", "Lovelace", null));
-        assertNotNull(Customer.createNew(context(), "a".repeat(254), "b".repeat(254), BIRTH_DATE));
-        assertNull(Customer.createNew(context(), "a".repeat(255), "Lovelace", BIRTH_DATE));
-        assertNull(Customer.createNew(context(), "Ada", "b".repeat(255), BIRTH_DATE));
+        assertNull(Customer.createNew(null, input("Ada Lovelace", BIRTH_DATE.value())));
+        assertNull(Customer.createNew(context(), null));
+        assertNull(Customer.createNew(context(), input("Ada", BIRTH_DATE.value())));
+        assertNull(Customer.createNew(context(), input("Ada Lovelace", null)));
+        assertNull(Customer.createNew(context(), new ImportOrderInput.CustomerInput(null, "PASSPORT", "Ada Lovelace", BIRTH_DATE.value())));
+        assertNotNull(Customer.createNew(context(), input("a".repeat(254) + " " + "b".repeat(254), BIRTH_DATE.value())));
+        assertNull(Customer.createNew(context(), input("a".repeat(255) + " Lovelace", BIRTH_DATE.value())));
+        assertNull(Customer.createNew(context(), input("Ada " + "b".repeat(255), BIRTH_DATE.value())));
     }
 
     @Test
     void modificationsReturnNewInstancesAndPreserveIdentityAndOriginal() throws Exception {
-        final var original = Customer.createNew(context(), "Ada", "Lovelace", BIRTH_DATE);
+        final var original = Customer.createNew(context(), input("Ada Lovelace", BIRTH_DATE.value()));
         final var changedBirthDate = BirthDate.of(LocalDate.of(2001, 2, 3), CLOCK);
 
         final var renamed = original.changeFirstName("Grace");
@@ -64,7 +66,7 @@ class CustomerTests {
 
     @Test
     void invalidModificationsReturnNullAndLeaveOriginalUnchanged() throws Exception {
-        final var original = Customer.createNew(context(), "Ada", "Lovelace", BIRTH_DATE);
+        final var original = Customer.createNew(context(), input("Ada Lovelace", BIRTH_DATE.value()));
 
         assertNull(original.changeFirstName(null));
         assertNull(original.changeFirstName("a".repeat(255)));
@@ -83,5 +85,9 @@ class CustomerTests {
                 new TenantInfo(UUID.randomUUID(), "test"),
                 "test-user"
         );
+    }
+
+    private static ImportOrderInput.CustomerInput input(final String name, final LocalDate birthdate) {
+        return new ImportOrderInput.CustomerInput("123", "PASSPORT", name, birthdate);
     }
 }

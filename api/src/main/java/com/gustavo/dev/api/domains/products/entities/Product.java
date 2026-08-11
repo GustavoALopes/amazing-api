@@ -1,6 +1,7 @@
 package com.gustavo.dev.api.domains.products.entities;
 
 import com.gustavo.dev.api.domains.products.entities.valueobjects.SKU;
+import com.gustavo.dev.api.domains.order.entities.inputs.ImportOrderInput;
 import com.gustavo.dev.domain.entities.BaseEntity;
 import com.gustavo.dev.domain.entities.inputs.ExecutionContext;
 import com.gustavo.dev.domain.entities.interfaces.IAggregateRoot;
@@ -27,7 +28,8 @@ public final class Product extends BaseEntity<UUID> implements IAggregateRoot {
     @Embedded
     @AttributeOverride(
             name = "value",
-            column = @Column(name = "sku", nullable = false, length = SKU.ValueRule.MAX_LENGTH_EXCLUSIVE - 1)
+            column = @Column(name = "sku", nullable = false, unique = true,
+                    length = SKU.ValueRule.MAX_LENGTH_EXCLUSIVE - 1)
     )
     private SKU sku;
 
@@ -46,12 +48,15 @@ public final class Product extends BaseEntity<UUID> implements IAggregateRoot {
 
     public static Product createNew(
             final ExecutionContext executionContext,
-            final SKU sku,
-            final String name
+            final ImportOrderInput.ProductInput input
     ) throws Exception {
-        if (executionContext == null || !isValid(sku, name)) {
+        if (executionContext == null || input == null) {
             return null;
         }
+
+        final var sku = SKU.of(input.skuCode());
+        final var name = input.name();
+        if (!isValid(sku, name)) return null;
 
         final var product = new Product(sku, name);
         product.baseCreateNew(executionContext, UuidProvider::getV7);

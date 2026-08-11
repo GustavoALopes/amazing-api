@@ -1,6 +1,7 @@
 package com.gustavo.dev.api.domains.order.entities;
 
 import com.gustavo.dev.api.domains.products.entities.Product;
+import com.gustavo.dev.api.domains.order.entities.inputs.ImportOrderInput;
 import com.gustavo.dev.domain.entities.BaseEntity;
 import com.gustavo.dev.domain.entities.inputs.ExecutionContext;
 import com.gustavo.dev.uuid.UuidProvider;
@@ -32,40 +33,47 @@ public final class ProductItem extends BaseEntity<UUID> {
     @Column(name = "purchase_price", nullable = false)
     private BigDecimal purchasePrice;
 
+    @Column(name = "quantity", nullable = false)
+    private int quantity;
+
     /** Infrastructure-only constructor for Hibernate. */
     protected ProductItem() {
         super();
     }
 
-    private ProductItem(final Product product, final BigDecimal purchasePrice) {
+    private ProductItem(final Product product, final BigDecimal purchasePrice, final int quantity) {
         this.product = product;
         this.purchasePrice = purchasePrice;
+        this.quantity = quantity;
     }
 
     public static ProductItem createNew(
             final ExecutionContext executionContext,
             final Product product,
-            final BigDecimal purchasePrice
+            final ImportOrderInput.ProductInput input
     ) throws Exception {
-        if (executionContext == null || product == null || !isValidPrice(purchasePrice)) {
+        final var purchasePrice = parsePrice(input == null ? null : input.price());
+        final var quantity = input == null ? 0 : input.quantity();
+        if (executionContext == null || product == null || !isValidPrice(purchasePrice) || quantity <= 0) {
             return null;
         }
 
-        final var item = new ProductItem(product, purchasePrice);
+        final var item = new ProductItem(product, purchasePrice, quantity);
         item.baseCreateNew(executionContext, UuidProvider::getV7);
         return item;
     }
 
     public ProductItem changePurchasePrice(final BigDecimal newPurchasePrice) {
-        return isValidPrice(newPurchasePrice) ? copyOf(product, newPurchasePrice) : null;
+        return isValidPrice(newPurchasePrice) ? copyOf(product, newPurchasePrice, quantity) : null;
     }
 
     public UUID id() { return id; }
     public Product product() { return product; }
     public BigDecimal purchasePrice() { return purchasePrice; }
+    public int quantity() { return quantity; }
 
-    private ProductItem copyOf(final Product newProduct, final BigDecimal newPurchasePrice) {
-        final var copy = new ProductItem(newProduct, newPurchasePrice);
+    private ProductItem copyOf(final Product newProduct, final BigDecimal newPurchasePrice, final int newQuantity) {
+        final var copy = new ProductItem(newProduct, newPurchasePrice, newQuantity);
         copy.id = id;
         copy.auditInfo = auditInfo;
         copy.correlationId = correlationId;
@@ -74,5 +82,10 @@ public final class ProductItem extends BaseEntity<UUID> {
 
     private static boolean isValidPrice(final BigDecimal value) {
         return value != null && value.compareTo(PurchasePriceRule.MIN_VALUE) >= 0;
+    }
+
+    private static BigDecimal parsePrice(final String value) {
+        try { return value == null ? null : new BigDecimal(value); }
+        catch (NumberFormatException exception) { return null; }
     }
 }

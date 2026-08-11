@@ -1,6 +1,7 @@
 package com.gustavo.dev.api.domains.products.entities;
 
 import com.gustavo.dev.api.domains.products.entities.valueobjects.SKU;
+import com.gustavo.dev.api.domains.order.entities.inputs.ImportOrderInput;
 import com.gustavo.dev.domain.entities.inputs.ExecutionContext;
 import com.gustavo.dev.domain.entities.interfaces.IAggregateRoot;
 import com.gustavo.dev.tenant.inputs.TenantInfo;
@@ -21,7 +22,7 @@ class ProductTests {
 
     @Test
     void createsAValidProduct() throws Exception {
-        final var product = Product.createNew(context(), SKU_VALUE, "Keyboard");
+        final var product = Product.createNew(context(), input("SKU-123", "Keyboard"));
 
         assertNotNull(product);
         assertInstanceOf(IAggregateRoot.class, product);
@@ -32,16 +33,17 @@ class ProductTests {
 
     @Test
     void rejectsInvalidCreationInputsAndNameLengthBoundary() throws Exception {
-        assertNull(Product.createNew(null, SKU_VALUE, "Keyboard"));
-        assertNull(Product.createNew(context(), null, "Keyboard"));
-        assertNull(Product.createNew(context(), SKU_VALUE, null));
-        assertNotNull(Product.createNew(context(), SKU_VALUE, "a".repeat(254)));
-        assertNull(Product.createNew(context(), SKU_VALUE, "a".repeat(255)));
+        assertNull(Product.createNew(null, input("SKU-123", "Keyboard")));
+        assertNull(Product.createNew(context(), null));
+        assertNull(Product.createNew(context(), input(null, "Keyboard")));
+        assertNull(Product.createNew(context(), input("SKU-123", null)));
+        assertNotNull(Product.createNew(context(), input("SKU-123", "a".repeat(254))));
+        assertNull(Product.createNew(context(), input("SKU-123", "a".repeat(255))));
     }
 
     @Test
     void modificationsReturnNewInstancesAndPreserveIdentityAndOriginal() throws Exception {
-        final var original = Product.createNew(context(), SKU_VALUE, "Keyboard");
+        final var original = Product.createNew(context(), input("SKU-123", "Keyboard"));
         final var replacementSku = SKU.of("SKU-456");
 
         final var reidentified = original.changeSku(replacementSku);
@@ -59,7 +61,7 @@ class ProductTests {
 
     @Test
     void invalidModificationsReturnNullAndLeaveOriginalUnchanged() throws Exception {
-        final var original = Product.createNew(context(), SKU_VALUE, "Keyboard");
+        final var original = Product.createNew(context(), input("SKU-123", "Keyboard"));
 
         assertNull(original.changeSku(null));
         assertNull(original.changeName(null));
@@ -75,5 +77,9 @@ class ProductTests {
                 new TenantInfo(UUID.randomUUID(), "test"),
                 "test-user"
         );
+    }
+
+    private static ImportOrderInput.ProductInput input(final String sku, final String name) {
+        return new ImportOrderInput.ProductInput(sku, name, "10.00", 1);
     }
 }
