@@ -114,6 +114,10 @@ public final class ExecutionContext {
         return Map.copyOf(messages);
     }
 
+    public void addMessage(final Message message) {
+        messages.put(UUID.randomUUID(), Objects.requireNonNull(message, "message must not be null"));
+    }
+
     public Set<Exception> getException() {
         return Set.copyOf(exceptions);
     }

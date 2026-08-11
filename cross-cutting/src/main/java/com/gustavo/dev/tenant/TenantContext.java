@@ -17,7 +17,7 @@ public final class TenantContext {
      * is bound to the current execution context.
      */
     public static String getTenantId() {
-        return TENANT_ID.orElse(null);
+        return TENANT_ID.isBound() ? TENANT_ID.get() : null;
     }
 
     /**
